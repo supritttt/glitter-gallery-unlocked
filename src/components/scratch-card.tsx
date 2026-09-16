@@ -155,7 +155,7 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
         <canvas
           ref={canvasRef}
           aria-label={`Scratch memory ${index + 1} to reveal it`}
-          className={`absolute inset-0 h-full w-full touch-none cursor-crosshair transition-opacity duration-500 ${isFading ? "pointer-events-none opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity duration-500 ${isFading ? "pointer-events-none opacity-0" : "opacity-100"}`}
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);
             drawingRef.current = true;
