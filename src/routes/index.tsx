@@ -104,7 +104,7 @@ function Index() {
           <br />our story waits.
         </h1>
         <p className="mx-auto mt-6 max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
-          Scratch each surface to bring a moment back into view.
+          Scratch side to side to bring a moment back into view — swipe up or down to scroll.
         </p>
       </header>
 
