@@ -94,7 +94,7 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
     const stride = 32;
     for (let i = 3; i < pixels.length; i += stride) {
       total += 1;
-      if (pixels[i] < 40) clear += 1;
+      if ((pixels[i] ?? 255) < 40) clear += 1;
     }
     return total === 0 ? 0 : clear / total;
   };
