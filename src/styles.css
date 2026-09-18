@@ -120,6 +120,8 @@
   --scratch-glitter: oklch(0.98 0.008 82 / 58%);
   --scratch-ink: oklch(0.3 0.015 258 / 78%);
   --gallery-scrim: linear-gradient(to top, oklch(0.08 0.012 258 / 88%), transparent);
+  --ambient-speck: oklch(0.88 0.08 76 / 38%);
+  --ambient-line: oklch(0.7 0.035 198 / 13%);
 }
 
 .dark {
@@ -181,6 +183,58 @@
 
 @utility animate-note-rise {
   animation: note-rise 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ambient-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.8;
+  background-image: repeating-linear-gradient(112deg, transparent 0 92px, var(--ambient-line) 93px, transparent 94px 188px);
+  animation: ambient-drift 24s linear infinite alternate;
+}
+
+.ambient-field span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ambient-speck);
+  box-shadow: 0 0 10px var(--ambient-speck);
+  animation: ambient-float 8s ease-in-out infinite;
+}
+
+.ambient-field span:nth-child(3n) { width: 3px; height: 3px; animation-duration: 11s; }
+.ambient-field span:nth-child(4n) { animation-duration: 14s; animation-direction: reverse; }
+.ambient-field span:nth-child(1) { left: 7%; top: 12%; }
+.ambient-field span:nth-child(2) { left: 17%; top: 42%; }
+.ambient-field span:nth-child(3) { left: 28%; top: 20%; }
+.ambient-field span:nth-child(4) { left: 38%; top: 72%; }
+.ambient-field span:nth-child(5) { left: 48%; top: 35%; }
+.ambient-field span:nth-child(6) { left: 58%; top: 8%; }
+.ambient-field span:nth-child(7) { left: 68%; top: 58%; }
+.ambient-field span:nth-child(8) { left: 78%; top: 28%; }
+.ambient-field span:nth-child(9) { left: 90%; top: 78%; }
+.ambient-field span:nth-child(10) { left: 12%; top: 88%; }
+.ambient-field span:nth-child(11) { left: 23%; top: 62%; }
+.ambient-field span:nth-child(12) { left: 34%; top: 93%; }
+.ambient-field span:nth-child(13) { left: 44%; top: 6%; }
+.ambient-field span:nth-child(14) { left: 54%; top: 82%; }
+.ambient-field span:nth-child(15) { left: 64%; top: 39%; }
+.ambient-field span:nth-child(16) { left: 73%; top: 92%; }
+.ambient-field span:nth-child(17) { left: 84%; top: 14%; }
+.ambient-field span:nth-child(18) { left: 95%; top: 48%; }
+
+@keyframes ambient-drift {
+  from { background-position: 0 0; }
+  to { background-position: 110px 40px; }
+}
+
+@keyframes ambient-float {
+  0%, 100% { opacity: 0.25; transform: translateY(0) scale(0.8); }
+  50% { opacity: 0.95; transform: translateY(-28px) scale(1.25); }
 }
 
 @media (prefers-reduced-motion: reduce) {
