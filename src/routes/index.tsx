@@ -36,18 +36,18 @@ export const Route = createFileRoute("/")({
 });
 
 const memories = [
-  { image: photo01.url, caption: "Where our story began" },
-  { image: photo02.url, caption: "A day worth remembering" },
-  { image: photo03.url, caption: "Smiles we still talk about" },
-  { image: photo04.url, caption: "Our little adventure" },
-  { image: photo05.url, caption: "A favorite kind of day" },
-  { image: photo06.url, caption: "Just us, in the moment" },
-  { image: photo07.url, caption: "The laughter between us" },
-  { image: photo08.url, caption: "One for the memory book" },
-  { image: photo09.url, caption: "A moment I’ll always keep" },
-  { image: photo10.url, caption: "Together is my favorite place" },
-  { image: photo01.url, caption: "Still one of the best days" },
-  { image: photo06.url, caption: "And so many more to come" },
+  { image: photo01.url, caption: "A little mirror moment" },
+  { image: photo02.url, caption: "Elegance in every reflection" },
+  { image: photo03.url, caption: "Silver saree, city lights" },
+  { image: photo04.url, caption: "A moonlit walk to remember" },
+  { image: photo05.url, caption: "Lost in the garden lights" },
+  { image: photo06.url, caption: "A perfect evening glow" },
+  { image: photo07.url, caption: "Nails, rings, and a little sparkle" },
+  { image: photo08.url, caption: "Dancing beneath the blue light" },
+  { image: photo09.url, caption: "A quiet moment after the celebration" },
+  { image: photo10.url, caption: "Wrapped in color and confidence" },
+  { image: photo01.url, caption: "That smile in the mirror" },
+  { image: photo06.url, caption: "One more night under the palms" },
 ];
 
 function Index() {
