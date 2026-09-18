@@ -35,25 +35,25 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const photoUrls = [
-  photo01.url,
-  photo02.url,
-  photo03.url,
-  photo04.url,
-  photo05.url,
-  photo06.url,
-  photo07.url,
-  photo08.url,
-  photo09.url,
-  photo10.url,
-  photo01.url,
-  photo06.url,
+const memories = [
+  { image: photo01.url, caption: "Where our story began" },
+  { image: photo02.url, caption: "A day worth remembering" },
+  { image: photo03.url, caption: "Smiles we still talk about" },
+  { image: photo04.url, caption: "Our little adventure" },
+  { image: photo05.url, caption: "A favorite kind of day" },
+  { image: photo06.url, caption: "Just us, in the moment" },
+  { image: photo07.url, caption: "The laughter between us" },
+  { image: photo08.url, caption: "One for the memory book" },
+  { image: photo09.url, caption: "A moment I’ll always keep" },
+  { image: photo10.url, caption: "Together is my favorite place" },
+  { image: photo01.url, caption: "Still one of the best days" },
+  { image: photo06.url, caption: "And so many more to come" },
 ];
 
 function Index() {
   const [unlocked, setUnlocked] = useState<Set<number>>(() => new Set());
   const celebratedRef = useRef(false);
-  const complete = unlocked.size === photoUrls.length;
+  const complete = unlocked.size === memories.length;
   const reducedMotion = useMemo(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     [],
@@ -84,7 +84,12 @@ function Index() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background pb-36 text-foreground">
+    <main className="relative min-h-screen overflow-x-hidden bg-background pb-36 text-foreground">
+      <div className="ambient-field" aria-hidden="true">
+        {Array.from({ length: 18 }, (_, index) => (
+          <span key={index} />
+        ))}
+      </div>
       <div className="sticky top-0 z-30 flex justify-center px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div
           className="flex min-w-56 items-center justify-center gap-2 rounded-full border border-gallery-line bg-background/88 px-5 py-2.5 shadow-gallery backdrop-blur-xl"
@@ -92,7 +97,7 @@ function Index() {
         >
           <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
           <span className="text-xs font-semibold uppercase text-gallery-paper">
-            {unlocked.size} / {photoUrls.length} Memories Unlocked
+            {unlocked.size} / {memories.length} Memories Unlocked
           </span>
         </div>
       </div>
@@ -109,10 +114,11 @@ function Index() {
       </header>
 
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:gap-6" aria-label="Twelve hidden memories">
-        {photoUrls.map((photo, index) => (
+        {memories.map((memory, index) => (
           <ScratchCard
-            key={`${photo}-${index}`}
-            image={photo}
+            key={`${memory.image}-${index}`}
+            image={memory.image}
+            caption={memory.caption}
             index={index}
             unlocked={unlocked.has(index)}
             onUnlock={() => unlockMemory(index)}

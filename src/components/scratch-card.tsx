@@ -4,11 +4,18 @@ import { Check, Sparkles } from "lucide-react";
 type ScratchCardProps = {
   image: string;
   index: number;
+  caption: string;
   unlocked: boolean;
   onUnlock: () => void;
 };
 
 type Point = { x: number; y: number };
+type ScratchAudio = {
+  context: AudioContext;
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+  filter: BiquadFilterNode;
+};
 
 const UNLOCK_THRESHOLD = 0.6;
 
@@ -16,12 +23,57 @@ function cssToken(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardProps) {
+export function ScratchCard({ image, index, caption, unlocked, onUnlock }: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<Point | null>(null);
   const checkedAtRef = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const scratchAudioRef = useRef<ScratchAudio | null>(null);
   const [isFading, setIsFading] = useState(false);
+
+  const stopScratchSound = useCallback(() => {
+    const scratchAudio = scratchAudioRef.current;
+    if (!scratchAudio) return;
+    const now = scratchAudio.context.currentTime;
+    scratchAudio.gain.gain.cancelScheduledValues(now);
+    scratchAudio.gain.gain.setValueAtTime(scratchAudio.gain.gain.value, now);
+    scratchAudio.gain.gain.linearRampToValueAtTime(0, now + 0.045);
+    scratchAudio.source.stop(now + 0.055);
+    scratchAudioRef.current = null;
+  }, []);
+
+  const startScratchSound = useCallback(() => {
+    if (scratchAudioRef.current) return;
+    const AudioContextConstructor = window.AudioContext;
+    if (!AudioContextConstructor) return;
+    const context = audioContextRef.current ?? new AudioContextConstructor();
+    audioContextRef.current = context;
+    if (context.state === "suspended") void context.resume();
+
+    const duration = 0.65;
+    const buffer = context.createBuffer(1, Math.floor(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let previous = 0;
+    for (let i = 0; i < samples.length; i += 1) {
+      const noise = Math.random() * 2 - 1;
+      previous = previous * 0.72 + noise * 0.28;
+      samples[i] = previous * (0.55 + Math.sin(i * 0.19) * 0.12);
+    }
+
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    filter.type = "bandpass";
+    filter.frequency.value = 1850;
+    filter.Q.value = 0.55;
+    gain.gain.value = 0.035;
+    source.connect(filter).connect(gain).connect(context.destination);
+    source.start();
+    scratchAudioRef.current = { context, source, gain, filter };
+  }, []);
 
   const paintCoating = useCallback(() => {
     const canvas = canvasRef.current;
@@ -79,6 +131,13 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
     return () => observer.disconnect();
   }, [paintCoating]);
 
+  useEffect(() => {
+    if (unlocked) stopScratchSound();
+    return () => {
+      stopScratchSound();
+    };
+  }, [stopScratchSound, unlocked]);
+
   const pointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>): Point => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return {
@@ -106,6 +165,13 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
     const lastPoint = lastPointRef.current;
     if (!context || !lastPoint) return;
     const nextPoint = pointFromEvent(event);
+    const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
+    const scratchAudio = scratchAudioRef.current;
+    if (scratchAudio) {
+      const now = scratchAudio.context.currentTime;
+      scratchAudio.gain.gain.setTargetAtTime(Math.min(0.075, 0.025 + distance / 1_600), now, 0.025);
+      scratchAudio.filter.frequency.setTargetAtTime(Math.min(3_100, 1_450 + distance * 12), now, 0.035);
+    }
     context.globalCompositeOperation = "destination-out";
     context.lineCap = "round";
     context.lineJoin = "round";
@@ -121,6 +187,7 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
       checkedAtRef.current = now;
       if (calculateCleared(context, canvas) >= UNLOCK_THRESHOLD) {
         drawingRef.current = false;
+        stopScratchSound();
         setIsFading(true);
         window.setTimeout(onUnlock, 430);
       }
@@ -130,48 +197,57 @@ export function ScratchCard({ image, index, unlocked, onUnlock }: ScratchCardPro
   const stopDrawing = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     drawingRef.current = false;
     lastPointRef.current = null;
+    stopScratchSound();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
 
   return (
-    <article className="group relative aspect-[4/5] overflow-hidden rounded-card border border-gallery-line bg-card shadow-gallery">
-      <img
-        src={image}
-        alt={`Revealed memory ${index + 1}`}
-        loading={index > 2 ? "lazy" : "eager"}
-        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
-      />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gallery-scrim px-4 pb-4 pt-14">
-        <span className="font-display text-xl text-gallery-paper">Memory {String(index + 1).padStart(2, "0")}</span>
-        {unlocked && (
-          <span className="inline-flex size-7 items-center justify-center rounded-full bg-success text-success-foreground" aria-label="Unlocked">
-            <Check className="size-4" strokeWidth={2} />
-          </span>
-        )}
-      </div>
-      {!unlocked && (
-        <canvas
-          ref={canvasRef}
-          aria-label={`Scratch memory ${index + 1} to reveal it`}
-          className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity duration-500 ${isFading ? "pointer-events-none opacity-0" : "opacity-100"}`}
-          onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            drawingRef.current = true;
-            lastPointRef.current = pointFromEvent(event);
-          }}
-          onPointerMove={scratchTo}
-          onPointerUp={stopDrawing}
-          onPointerCancel={stopDrawing}
-          onContextMenu={(event) => event.preventDefault()}
+    <figure className="group">
+      <article className="relative aspect-[4/5] overflow-hidden rounded-card border border-gallery-line bg-card shadow-gallery">
+        <img
+          src={image}
+          alt={unlocked ? caption : `Hidden memory ${index + 1}`}
+          loading={index > 2 ? "lazy" : "eager"}
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
         />
-      )}
-      {!unlocked && !isFading && (
-        <div className="pointer-events-none absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border border-gallery-foil-line bg-gallery-foil/70 text-gallery-ink backdrop-blur-sm">
-          <Sparkles className="size-3.5" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gallery-scrim px-4 pb-4 pt-14">
+          <span className="font-display text-xl text-gallery-paper">Memory {String(index + 1).padStart(2, "0")}</span>
+          {unlocked && (
+            <span className="inline-flex size-7 items-center justify-center rounded-full bg-success text-success-foreground" aria-label="Unlocked">
+              <Check className="size-4" strokeWidth={2} />
+            </span>
+          )}
         </div>
-      )}
-    </article>
+        {!unlocked && (
+          <canvas
+            ref={canvasRef}
+            aria-label={`Scratch memory ${index + 1} to reveal it`}
+            className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity duration-500 ${isFading ? "pointer-events-none opacity-0" : "opacity-100"}`}
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(event.pointerId);
+              drawingRef.current = true;
+              lastPointRef.current = pointFromEvent(event);
+              startScratchSound();
+            }}
+            onPointerMove={scratchTo}
+            onPointerUp={stopDrawing}
+            onPointerCancel={stopDrawing}
+            onContextMenu={(event) => event.preventDefault()}
+          />
+        )}
+        {!unlocked && !isFading && (
+          <div className="pointer-events-none absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border border-gallery-foil-line bg-gallery-foil/70 text-gallery-ink backdrop-blur-sm">
+            <Sparkles className="size-3.5" aria-hidden="true" />
+          </div>
+        )}
+      </article>
+      <figcaption
+        className={`min-h-14 px-2 pt-3 text-center font-display text-xl transition-all duration-500 ${unlocked ? "translate-y-0 text-gallery-paper opacity-100" : "translate-y-1 text-muted-foreground opacity-45"}`}
+      >
+        {unlocked ? caption : "A memory waiting to be revealed"}
+      </figcaption>
+    </figure>
   );
 }
