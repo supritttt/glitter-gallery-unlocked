@@ -22,7 +22,10 @@ Build a highly interactive "Scratch-Off Gallery" web page using React and Tailwi
 
 ## Build with Love
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6f002383d9d73ab735eb6df4c2b1082ad56bd227
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
 - **Stay in sync**: every change made in Lovable is committed straight to this repository.
