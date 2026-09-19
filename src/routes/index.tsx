@@ -8,6 +8,7 @@ import { IntroOverlay } from "@/components/intro-overlay";
 import { MemoryDialog } from "@/components/memory-dialog";
 import { ScratchCard } from "@/components/scratch-card";
 import { downloadKeepsake, playUnlockChime } from "@/lib/celebration";
+import backgroundVideo from "../../animation/animation1.mp4";
 import {
   bonusMemory,
   encouragementMilestones,
@@ -210,7 +211,7 @@ function Index() {
         poster="/cover.jpg"
         aria-hidden="true"
       >
-        <source src="/animation/animation1.mp4" type="video/mp4" />
+        <source src={backgroundVideo} type="video/mp4" />
       </video>
       <div className="pointer-events-none fixed inset-0 z-0 bg-background/40" aria-hidden="true" />
 
