@@ -51,6 +51,7 @@ export function ScratchCard({
 }: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dustCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<Point | null>(null);
   const checkedAtRef = useRef(0);
@@ -59,6 +60,14 @@ export function ScratchCard({
   const [isFading, setIsFading] = useState(false);
   const [isPeeking, setIsPeeking] = useState(false);
   const [justUnlocked, setJustUnlocked] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const imageElement = imageRef.current;
+    if (imageElement?.complete && imageElement.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, [image]);
 
   const peekTimerRef = useRef<number | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -251,11 +260,6 @@ export function ScratchCard({
       context.fill();
     }
 
-    // Border pattern inside coating
-    context.strokeStyle = "rgba(255, 255, 255, 0.35)";
-    context.lineWidth = 1.5 * ratio;
-    context.strokeRect(12 * ratio, 12 * ratio, canvas.width - 24 * ratio, canvas.height - 24 * ratio);
-
     context.fillStyle = ink;
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -410,24 +414,41 @@ export function ScratchCard({
         onClick={unlocked ? onSelect : undefined}
         className={`relative aspect-[4/5] overflow-hidden rounded-card border bg-card shadow-gallery transition-all duration-500 ${
           unlocked
-            ? "cursor-pointer border-gallery-line hover:border-primary/50 hover:shadow-xl"
+            ? bonus
+              ? "cursor-pointer border-amber-300/90 bg-gradient-to-br from-amber-300/20 via-card to-yellow-100/15 shadow-[0_0_0_1px_rgba(250,204,21,0.55),0_0_34px_rgba(251,191,36,0.34),0_24px_64px_rgba(245,158,11,0.24)] hover:border-yellow-200 hover:shadow-[0_0_0_1px_rgba(250,204,21,0.7),0_0_44px_rgba(251,191,36,0.44),0_24px_72px_rgba(245,158,11,0.3)]"
+              : "cursor-pointer border-gallery-line hover:border-primary/50 hover:shadow-xl"
             : bonus
               ? "border-amber-300/90 bg-gradient-to-br from-amber-400/15 via-card to-yellow-200/15 shadow-[0_0_0_1px_rgba(250,204,21,0.45),0_0_28px_rgba(251,191,36,0.28),0_24px_64px_rgba(245,158,11,0.2)]"
               : "border-gallery-line"
         } ${justUnlocked ? "glow-unlocked border-primary ring-2 ring-primary/40" : ""}`}
       >
         <img
+          ref={imageRef}
           src={image}
+          onLoad={() => setImageLoaded(true)}
           onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = "/cover.jpg";
+            const target = event.currentTarget;
+            if (target.dataset.fallback === "true") {
+              target.onerror = null;
+              setImageLoaded(true);
+              return;
+            }
+            target.dataset.fallback = "true";
+            setImageLoaded(false);
+            target.src = "/cover.jpg";
           }}
           alt={unlocked ? caption : `Hidden memory ${index + 1}`}
           loading={index > 2 ? "lazy" : "eager"}
-          className={`h-full w-full object-cover transition-transform duration-700 ${
-            unlocked ? "group-hover:scale-[1.035]" : ""
-          }`}
+          className={`h-full w-full object-cover transition-[opacity,filter,transform] duration-1000 ease-out ${
+            imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-md"
+          } ${unlocked ? "group-hover:scale-[1.035]" : "scale-[1.02]"}`}
         />
+        {!imageLoaded && (
+          <div
+            className="pointer-events-none absolute inset-0 animate-pulse bg-gradient-to-br from-primary/10 via-gallery-foil/10 to-background/30"
+            aria-hidden="true"
+          />
+        )}
 
         {/* Bottom card scrim and title banner */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gallery-scrim px-4 pb-4 pt-14">
@@ -527,7 +548,11 @@ export function ScratchCard({
               if (e.key === "Enter" || e.key === " ") onSelect?.();
             }}
           >
-            <p className="font-display text-xl text-gallery-paper transition-colors group-hover/caption:text-primary">
+            <p
+              className={`font-display text-xl transition-colors group-hover/caption:text-primary ${
+                bonus ? "text-amber-100" : "text-gallery-paper"
+              }`}
+            >
               {caption}
             </p>
             {note && (
@@ -536,7 +561,7 @@ export function ScratchCard({
               </p>
             )}
             {date && (
-              <p className="mt-1 text-[0.68rem] font-semibold uppercase tracking-wider text-primary/80">
+              <p className={`mt-1 text-[0.68rem] font-semibold uppercase tracking-wider ${bonus ? "text-amber-300" : "text-primary/80"}`}>
                 {date} · Tap to read note
               </p>
             )}

@@ -84,18 +84,18 @@ export function Finale({ images, lines, reducedMotion, onReplay, onSave }: Final
       </div>
 
       {/* Foreground letter */}
-      <div className="relative z-10 animate-note-rise-static rounded-card border border-primary/40 bg-card/95 p-7 text-center shadow-2xl backdrop-blur-xl sm:p-11">
-        <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary shadow-sm">
-          <Heart className="size-5 fill-primary text-primary animate-pulse" aria-hidden="true" />
+      <div className="finale-letter relative z-10 animate-note-rise-static rounded-card p-7 text-center sm:p-11">
+        <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full border border-[#b87952]/70 bg-[#f7d7b5]/70 text-[#7c3f2d] shadow-sm">
+          <Heart className="size-5 fill-[#b87952] text-[#7c3f2d] animate-pulse" aria-hidden="true" />
         </div>
 
-        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.25em] text-primary">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.25em] text-[#8d4f35]">
           From the bottom of my heart
         </p>
 
-        <div className="mx-auto mt-3 h-px w-20 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <div className="mx-auto mt-3 h-px w-20 bg-gradient-to-r from-transparent via-[#b87952]/70 to-transparent" />
 
-        <div className="mt-6 min-h-32 text-left font-display text-xl leading-relaxed text-gallery-paper sm:text-2xl">
+        <div className="finale-letter-body mt-6 min-h-32 text-left text-xl leading-relaxed text-[#4b3028] sm:text-2xl">
           <p className="whitespace-pre-line text-center leading-[1.6]">
             {typed}
             {!reducedMotion && typed.length < fullText.length && (
@@ -108,7 +108,7 @@ export function Finale({ images, lines, reducedMotion, onReplay, onSave }: Final
           <button
             type="button"
             onClick={onSave}
-            className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/15 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-md backdrop-blur-md transition-all hover:scale-105 hover:bg-primary/25 hover:shadow-primary/20"
+            className="inline-flex items-center gap-2 rounded-full border border-[#9b5c3d]/70 bg-[#7c3f2d]/10 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#7c3f2d] shadow-md transition-all hover:scale-105 hover:bg-[#7c3f2d]/20"
           >
             <Download className="size-4" aria-hidden="true" />
             Save as keepsake
@@ -117,15 +117,15 @@ export function Finale({ images, lines, reducedMotion, onReplay, onSave }: Final
           <button
             type="button"
             onClick={onReplay}
-            className="inline-flex items-center gap-2 rounded-full border border-gallery-line bg-background/60 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-all hover:border-primary/40 hover:text-gallery-paper"
+            className="inline-flex items-center gap-2 rounded-full border border-[#9b765f]/60 bg-[#fff1dc]/35 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#76584a] transition-all hover:border-[#9b5c3d]/60 hover:text-[#4b3028]"
           >
             <RotateCcw className="size-4" aria-hidden="true" />
             Replay
           </button>
         </div>
 
-        <p className="mt-5 flex items-center justify-center gap-1.5 text-[0.72rem] text-muted-foreground/75">
-          <Sparkles className="size-3 text-primary" />
+        <p className="mt-5 flex items-center justify-center gap-1.5 text-[0.72rem] text-[#8d604e]">
+          <Sparkles className="size-3 text-[#b87952]" />
           Thank you for every shared moment
         </p>
       </div>
