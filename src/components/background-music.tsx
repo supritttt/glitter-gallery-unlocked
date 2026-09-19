@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Music, VolumeX } from "lucide-react";
 
-import track from "@/assets/idk-how.mp3.asset.json";
-
 // The uploaded track plays exactly as-is, softly behind the page.
 const PLAYBACK_RATE = 1;
 const VOLUME = 0.28;
+const TRACK_URL = "/music/background.mp3";
 
 export function BackgroundMusic() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  const playAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio
+      .play()
+      .then(() => setPlaying(true))
+      .catch(() => setPlaying(false));
+  };
+
   useEffect(() => {
-    const audio = new Audio(track.url);
+    const audio = new Audio(TRACK_URL);
     audio.loop = true;
     audio.preservesPitch = true;
     audio.playbackRate = PLAYBACK_RATE;
@@ -26,18 +34,16 @@ export function BackgroundMusic() {
       .catch(() => undefined);
 
     const onFirstGesture = () => {
-      if (audio.paused) {
-        audio
-          .play()
-          .then(() => setPlaying(true))
-          .catch(() => undefined);
-      }
+      if (audio.paused) playAudio();
       window.removeEventListener("pointerdown", onFirstGesture);
     };
+    const onStartMusic = () => playAudio();
     window.addEventListener("pointerdown", onFirstGesture);
+    window.addEventListener("start-background-music", onStartMusic);
 
     return () => {
       window.removeEventListener("pointerdown", onFirstGesture);
+      window.removeEventListener("start-background-music", onStartMusic);
       audio.pause();
       audio.src = "";
       audioRef.current = null;
@@ -48,10 +54,7 @@ export function BackgroundMusic() {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
-      audio
-        .play()
-        .then(() => setPlaying(true))
-        .catch(() => undefined);
+      playAudio();
     } else {
       audio.pause();
       setPlaying(false);

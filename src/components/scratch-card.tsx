@@ -389,6 +389,10 @@ export function ScratchCard({
       >
         <img
           src={image}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = "/cover.jpg";
+          }}
           alt={unlocked ? caption : `Hidden memory ${index + 1}`}
           loading={index > 2 ? "lazy" : "eager"}
           className={`h-full w-full object-cover transition-transform duration-700 ${

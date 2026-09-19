@@ -11,6 +11,7 @@ export function IntroOverlay({ name, count, onBegin }: IntroOverlayProps) {
   const [leaving, setLeaving] = useState(false);
 
   const begin = () => {
+    window.dispatchEvent(new Event("start-background-music"));
     setLeaving(true);
     window.setTimeout(onBegin, 550);
   };
