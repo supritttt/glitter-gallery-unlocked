@@ -3,9 +3,9 @@ import { Music, VolumeX } from "lucide-react";
 
 import track from "@/assets/idk-how.mp3.asset.json";
 
-// "Slowed" edit: the whole track plays slower and deeper, softly behind the page.
-const PLAYBACK_RATE = 0.82;
-const VOLUME = 0.22;
+// The uploaded track plays exactly as-is, softly behind the page.
+const PLAYBACK_RATE = 1;
+const VOLUME = 0.28;
 
 export function BackgroundMusic() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -14,7 +14,7 @@ export function BackgroundMusic() {
   useEffect(() => {
     const audio = new Audio(track.url);
     audio.loop = true;
-    audio.preservesPitch = false;
+    audio.preservesPitch = true;
     audio.playbackRate = PLAYBACK_RATE;
     audio.volume = VOLUME;
     audioRef.current = audio;
