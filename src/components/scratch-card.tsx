@@ -480,7 +480,7 @@ export function ScratchCard({
           <canvas
             ref={canvasRef}
             aria-label={`Scratch memory ${index + 1} to reveal it`}
-            className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity ${
+            className={`absolute inset-0 h-full w-full touch-none cursor-crosshair transition-opacity ${
               isFading
                 ? "pointer-events-none opacity-0 duration-500"
                 : isPeeking
