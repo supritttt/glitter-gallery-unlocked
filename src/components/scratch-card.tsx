@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Eye, Maximize2, Sparkles } from "lucide-react";
 
 type ScratchCardProps = {
   image: string;
   index: number;
   caption: string;
+  note?: string;
+  date?: string;
   unlocked: boolean;
+  bonus?: boolean;
   onUnlock: () => void;
+  onSelect?: () => void;
 };
 
 type Point = { x: number; y: number };
@@ -17,20 +21,55 @@ type ScratchAudio = {
   filter: BiquadFilterNode;
 };
 
-const UNLOCK_THRESHOLD = 0.6;
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+  color: string;
+};
+
+const UNLOCK_THRESHOLD = 0.58;
 
 function cssToken(name: string) {
+  if (typeof document === "undefined") return "";
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-export function ScratchCard({ image, index, caption, unlocked, onUnlock }: ScratchCardProps) {
+export function ScratchCard({
+  image,
+  index,
+  caption,
+  note,
+  date,
+  unlocked,
+  bonus = false,
+  onUnlock,
+  onSelect,
+}: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dustCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<Point | null>(null);
   const checkedAtRef = useRef(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const scratchAudioRef = useRef<ScratchAudio | null>(null);
   const [isFading, setIsFading] = useState(false);
+  const [isPeeking, setIsPeeking] = useState(false);
+  const [justUnlocked, setJustUnlocked] = useState(false);
+
+  const peekTimerRef = useRef<number | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Particles system for golden dust
+  const particlesRef = useRef<Particle[]>([]);
+  const animFrameRef = useRef<number | null>(null);
+
+  const reducedMotion = useRef(
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
 
   const stopScratchSound = useCallback(() => {
     const scratchAudio = scratchAudioRef.current;
@@ -75,52 +114,137 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
     scratchAudioRef.current = { context, source, gain, filter };
   }, []);
 
+  // Update and render dust particles
+  const updateParticles = useCallback(() => {
+    const dustCanvas = dustCanvasRef.current;
+    if (!dustCanvas) return;
+    const ctx = dustCanvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, dustCanvas.width, dustCanvas.height);
+
+    const particles = particlesRef.current;
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      if (!p) continue;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.04; // gentle gravity
+      p.alpha -= 0.024;
+
+      if (p.alpha <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = "#f5d77f";
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (particles.length > 0) {
+      animFrameRef.current = requestAnimationFrame(updateParticles);
+    } else {
+      animFrameRef.current = null;
+    }
+  }, []);
+
+  const spawnDustParticles = useCallback(
+    (x: number, y: number) => {
+      if (reducedMotion.current) return;
+      const dustCanvas = dustCanvasRef.current;
+      if (!dustCanvas) return;
+
+      const colors = ["#ffd978", "#ffecb3", "#f7c844", "#ffffff"];
+      for (let i = 0; i < 3; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.6 + Math.random() * 1.8;
+        particlesRef.current.push({
+          x: x + (Math.random() * 8 - 4),
+          y: y + (Math.random() * 8 - 4),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 0.5,
+          size: 1.2 + Math.random() * 2.2,
+          alpha: 0.95,
+          color: colors[Math.floor(Math.random() * colors.length)] ?? "#ffd978",
+        });
+      }
+
+      if (!animFrameRef.current) {
+        animFrameRef.current = requestAnimationFrame(updateParticles);
+      }
+    },
+    [updateParticles],
+  );
+
   const paintCoating = useCallback(() => {
     const canvas = canvasRef.current;
+    const dustCanvas = dustCanvasRef.current;
     if (!canvas || unlocked) return;
     const bounds = canvas.getBoundingClientRect();
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(bounds.width * ratio));
     canvas.height = Math.max(1, Math.round(bounds.height * ratio));
 
+    if (dustCanvas) {
+      dustCanvas.width = canvas.width;
+      dustCanvas.height = canvas.height;
+    }
+
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return;
 
-    const silverDark = cssToken("--scratch-shadow");
-    const silver = cssToken("--scratch-silver");
-    const silverLight = cssToken("--scratch-highlight");
-    const glitter = cssToken("--scratch-glitter");
-    const ink = cssToken("--scratch-ink");
+    const silverDark = cssToken("--scratch-shadow") || "#8a8d94";
+    const silver = cssToken("--scratch-silver") || "#bcc0c7";
+    const silverLight = cssToken("--scratch-highlight") || "#e8ebef";
+    const glitter = cssToken("--scratch-glitter") || "rgba(255,255,255,0.6)";
+    const ink = cssToken("--scratch-ink") || "rgba(40,40,45,0.85)";
+
     const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, silverDark);
-    gradient.addColorStop(0.3, silverLight);
-    gradient.addColorStop(0.58, silver);
+    gradient.addColorStop(0.28, silverLight);
+    gradient.addColorStop(0.55, silver);
     gradient.addColorStop(0.82, silverLight);
     gradient.addColorStop(1, silverDark);
     context.fillStyle = gradient;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    let seed = index * 9_973 + 17;
+    let seed = (index + 1) * 9_973 + 17;
     const random = () => {
       seed = (seed * 16_807) % 2_147_483_647;
       return seed / 2_147_483_647;
     };
     context.fillStyle = glitter;
-    for (let i = 0; i < 760; i += 1) {
+    for (let i = 0; i < 780; i += 1) {
       const radius = (0.35 + random() * 1.5) * ratio;
       context.beginPath();
       context.arc(random() * canvas.width, random() * canvas.height, radius, 0, Math.PI * 2);
       context.fill();
     }
 
+    // Border pattern inside coating
+    context.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    context.lineWidth = 1.5 * ratio;
+    context.strokeRect(10 * ratio, 10 * ratio, canvas.width - 20 * ratio, canvas.height - 20 * ratio);
+
     context.fillStyle = ink;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.font = `600 ${Math.round(11 * ratio)}px Manrope, sans-serif`;
-    context.fillText("SCRATCH TO REVEAL", canvas.width / 2, canvas.height / 2 - 4 * ratio);
+    context.fillText(bonus ? "BONUS MEMORY" : "SCRATCH TO REVEAL", canvas.width / 2, canvas.height / 2 - 5 * ratio);
     context.font = `400 ${Math.round(9 * ratio)}px Manrope, sans-serif`;
-    context.fillText(`MEMORY ${String(index + 1).padStart(2, "0")}`, canvas.width / 2, canvas.height / 2 + 15 * ratio);
-  }, [index, unlocked]);
+    context.fillText(
+      bonus ? "A secret for you" : `MEMORY ${String(index + 1).padStart(2, "0")}`,
+      canvas.width / 2,
+      canvas.height / 2 + 14 * ratio,
+    );
+  }, [bonus, index, unlocked]);
 
   useEffect(() => {
     paintCoating();
@@ -135,6 +259,7 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
     if (unlocked) stopScratchSound();
     return () => {
       stopScratchSound();
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [stopScratchSound, unlocked]);
 
@@ -159,6 +284,21 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
   };
 
   const scratchTo = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    // If user is scratching, cancel long press peek
+    if (pointerStartRef.current) {
+      const dist = Math.hypot(
+        event.clientX - pointerStartRef.current.x,
+        event.clientY - pointerStartRef.current.y,
+      );
+      if (dist > 8) {
+        if (peekTimerRef.current) {
+          window.clearTimeout(peekTimerRef.current);
+          peekTimerRef.current = null;
+        }
+        if (isPeeking) setIsPeeking(false);
+      }
+    }
+
     if (!drawingRef.current || unlocked) return;
     const canvas = event.currentTarget;
     const context = canvas.getContext("2d", { willReadFrequently: true });
@@ -166,16 +306,22 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
     if (!context || !lastPoint) return;
     const nextPoint = pointFromEvent(event);
     const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
+
+    // Audio feedback
     const scratchAudio = scratchAudioRef.current;
     if (scratchAudio) {
       const now = scratchAudio.context.currentTime;
       scratchAudio.gain.gain.setTargetAtTime(Math.min(0.075, 0.025 + distance / 1_600), now, 0.025);
       scratchAudio.filter.frequency.setTargetAtTime(Math.min(3_100, 1_450 + distance * 12), now, 0.035);
     }
+
+    // Spawn golden dust particles
+    spawnDustParticles(nextPoint.x, nextPoint.y);
+
     context.globalCompositeOperation = "destination-out";
     context.lineCap = "round";
     context.lineJoin = "round";
-    context.lineWidth = Math.max(38, canvas.width * 0.115);
+    context.lineWidth = Math.max(38, canvas.width * 0.12);
     context.beginPath();
     context.moveTo(lastPoint.x, lastPoint.y);
     context.lineTo(nextPoint.x, nextPoint.y);
@@ -183,21 +329,49 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
     lastPointRef.current = nextPoint;
 
     const now = performance.now();
-    if (now - checkedAtRef.current > 140) {
+    if (now - checkedAtRef.current > 130) {
       checkedAtRef.current = now;
       if (calculateCleared(context, canvas) >= UNLOCK_THRESHOLD) {
         drawingRef.current = false;
         stopScratchSound();
         setIsFading(true);
-        window.setTimeout(onUnlock, 430);
+        setJustUnlocked(true);
+        window.setTimeout(() => {
+          onUnlock();
+          window.setTimeout(() => setJustUnlocked(false), 1400);
+        }, 400);
       }
     }
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drawingRef.current = true;
+    lastPointRef.current = pointFromEvent(event);
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
+    startScratchSound();
+
+    // Start long-press peek timer
+    if (peekTimerRef.current) window.clearTimeout(peekTimerRef.current);
+    peekTimerRef.current = window.setTimeout(() => {
+      setIsPeeking(true);
+    }, 450);
   };
 
   const stopDrawing = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     drawingRef.current = false;
     lastPointRef.current = null;
+    pointerStartRef.current = null;
     stopScratchSound();
+
+    if (peekTimerRef.current) {
+      window.clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    if (isPeeking) {
+      setIsPeeking(false); // smoothly re-frosts
+    }
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -205,48 +379,131 @@ export function ScratchCard({ image, index, caption, unlocked, onUnlock }: Scrat
 
   return (
     <figure className="group">
-      <article className="relative aspect-[4/5] overflow-hidden rounded-card border border-gallery-line bg-card shadow-gallery">
+      <article
+        onClick={unlocked ? onSelect : undefined}
+        className={`relative aspect-[4/5] overflow-hidden rounded-card border bg-card shadow-gallery transition-all duration-500 ${
+          unlocked
+            ? "cursor-pointer border-gallery-line hover:border-primary/50 hover:shadow-xl"
+            : "border-gallery-line"
+        } ${justUnlocked ? "glow-unlocked border-primary ring-2 ring-primary/40" : ""}`}
+      >
         <img
           src={image}
           alt={unlocked ? caption : `Hidden memory ${index + 1}`}
           loading={index > 2 ? "lazy" : "eager"}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
+          className={`h-full w-full object-cover transition-transform duration-700 ${
+            unlocked ? "group-hover:scale-[1.035]" : ""
+          }`}
         />
+
+        {/* Bottom card scrim and title banner */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gallery-scrim px-4 pb-4 pt-14">
-          <span className="font-display text-xl text-gallery-paper">Memory {String(index + 1).padStart(2, "0")}</span>
+          <span className="font-display text-xl text-gallery-paper">
+            {bonus ? "Bonus Mystery" : `Memory ${String(index + 1).padStart(2, "0")}`}
+          </span>
           {unlocked && (
-            <span className="inline-flex size-7 items-center justify-center rounded-full bg-success text-success-foreground" aria-label="Unlocked">
+            <span
+              className="inline-flex size-7 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm"
+              aria-label="Unlocked"
+            >
               <Check className="size-4" strokeWidth={2} />
             </span>
           )}
         </div>
+
+        {/* Unlocked hover hint */}
+        {unlocked && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/25 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 group-hover:opacity-100">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-card/90 px-3.5 py-1.5 text-xs font-semibold text-gallery-paper shadow-gallery backdrop-blur-md">
+              <Maximize2 className="size-3 text-primary" />
+              View full memory
+            </span>
+          </div>
+        )}
+
+        {/* Silver Scratch Overlay Canvas */}
         {!unlocked && (
           <canvas
             ref={canvasRef}
             aria-label={`Scratch memory ${index + 1} to reveal it`}
-            className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity duration-500 ${isFading ? "pointer-events-none opacity-0" : "opacity-100"}`}
-            onPointerDown={(event) => {
-              event.currentTarget.setPointerCapture(event.pointerId);
-              drawingRef.current = true;
-              lastPointRef.current = pointFromEvent(event);
-              startScratchSound();
-            }}
+            className={`absolute inset-0 h-full w-full touch-pan-y cursor-crosshair transition-opacity ${
+              isFading
+                ? "pointer-events-none opacity-0 duration-500"
+                : isPeeking
+                  ? "opacity-20 duration-300"
+                  : "opacity-100 duration-500"
+            }`}
+            onPointerDown={handlePointerDown}
             onPointerMove={scratchTo}
             onPointerUp={stopDrawing}
             onPointerCancel={stopDrawing}
             onContextMenu={(event) => event.preventDefault()}
           />
         )}
-        {!unlocked && !isFading && (
+
+        {/* Golden dust overlay canvas */}
+        {!unlocked && (
+          <canvas
+            ref={dustCanvasRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+          />
+        )}
+
+        {/* Peeking banner indicator */}
+        {isPeeking && !unlocked && (
+          <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center animate-note-fade">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 bg-background/90 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-wider text-primary shadow-lg backdrop-blur-md">
+              <Eye className="size-3.5 animate-pulse" />
+              Peeking · Release to re-frost
+            </span>
+          </div>
+        )}
+
+        {/* Top-right sparkle icon on scratch coating */}
+        {!unlocked && !isFading && !isPeeking && (
           <div className="pointer-events-none absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border border-gallery-foil-line bg-gallery-foil/70 text-gallery-ink backdrop-blur-sm">
             <Sparkles className="size-3.5" aria-hidden="true" />
           </div>
         )}
       </article>
-      <figcaption
-        className={`min-h-14 px-2 pt-3 text-center font-display text-xl transition-all duration-500 ${unlocked ? "translate-y-0 text-gallery-paper opacity-100" : "translate-y-1 text-muted-foreground opacity-45"}`}
-      >
-        {unlocked ? caption : "A memory waiting to be revealed"}
+
+      {/* Caption & Personal Note Area */}
+      <figcaption className="min-h-16 px-2 pt-3 text-center">
+        {unlocked ? (
+          <div
+            onClick={onSelect}
+            className="cursor-pointer group/caption focus:outline-none"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onSelect?.();
+            }}
+          >
+            <p className="font-display text-xl text-gallery-paper transition-colors group-hover/caption:text-primary">
+              {caption}
+            </p>
+            {note && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2 italic">
+                "{note}"
+              </p>
+            )}
+            {date && (
+              <p className="mt-1 text-[0.68rem] font-semibold uppercase tracking-wider text-primary/80">
+                {date} · Tap to read note
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="transition-opacity duration-300 opacity-60">
+            <p className="font-display text-lg text-gallery-paper">
+              {bonus ? "A secret bonus memory" : `Memory ${String(index + 1).padStart(2, "0")}`}
+            </p>
+            <p className="mt-0.5 text-[0.7rem] uppercase tracking-wider text-muted-foreground">
+              Scratch or hold to peek
+            </p>
+          </div>
+        )}
       </figcaption>
     </figure>
   );

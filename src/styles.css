@@ -185,6 +185,77 @@
   animation: note-rise 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes note-fade {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@utility animate-note-fade {
+  animation: note-fade 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes note-rise-static {
+  from { opacity: 0; transform: translateY(1.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-note-rise-static {
+  animation: note-rise-static 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes unlock-pulse {
+  0% { box-shadow: 0 0 0 0 oklch(0.76 0.11 71 / 80%); }
+  50% { box-shadow: 0 0 30px 10px oklch(0.76 0.11 71 / 45%); }
+  100% { box-shadow: 0 0 0 0 oklch(0.76 0.11 71 / 0%); }
+}
+
+.glow-unlocked {
+  animation: unlock-pulse 1.2s ease-out;
+}
+
+.type-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.15em;
+  background-color: var(--primary);
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  animation: caret-blink 0.8s infinite;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.collage-drift {
+  position: absolute;
+  inset: -25% -15% -25% -15%;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  opacity: 0.18;
+  filter: blur(1px) contrast(1.05);
+  transform: rotate(-2deg) scale(1.02);
+  animation: drift 22s ease-in-out infinite alternate;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.collage-drift img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes drift {
+  0% { transform: rotate(-2deg) translateY(0) scale(1.02); }
+  100% { transform: rotate(1.5deg) translateY(-30px) scale(1.06); }
+}
+
 .ambient-field {
   position: fixed;
   inset: 0;

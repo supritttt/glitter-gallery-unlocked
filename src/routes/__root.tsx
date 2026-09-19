@@ -77,13 +77,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Scratch-Off Memories" },
-      { name: "description", content: "A private gallery of moments waiting to be revealed." },
-      { name: "author", content: "Memories" },
-      { property: "og:title", content: "Scratch-Off Memories" },
-      { property: "og:description", content: "A private gallery of moments waiting to be revealed." },
+      { title: "Someone made this for you." },
+      { name: "description", content: "12 memories, hidden under silver. Scratch each one to remember." },
+      { name: "author", content: "With Love" },
+      { property: "og:title", content: "Someone made this for you." },
+      { property: "og:description", content: "12 memories, hidden under silver. Scratch each one to remember." },
+      { property: "og:image", content: "/cover.jpg" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Someone made this for you." },
+      { name: "twitter:description", content: "12 memories, hidden under silver. Scratch each one to remember." },
+      { name: "twitter:image", content: "/cover.jpg" },
     ],
     links: [
       {

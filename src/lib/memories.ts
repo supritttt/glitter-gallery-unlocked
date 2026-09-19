@@ -96,8 +96,17 @@ export const memories: Memory[] = [
 
 /** The hidden thirteenth card — only appears once all twelve are unlocked. */
 export const bonusMemory: Memory = {
-  image: photo04.url,
+  image: "/bonus-memory.jpg",
   caption: "One more you didn't know about",
   note: "You found all twelve. Here's the one I was saving — because with you there's always one more memory waiting.",
-  date: "Just for you",
+  date: "The quiet magic",
 };
+
+export const recipientName = "Sonakshi";
+
+export const encouragementMilestones: Record<number, string> = {
+  4: "A third of the way… every smile tells a story ✨",
+  8: "Two thirds uncovered… each moment even brighter than the last 💫",
+  12: "All memories found… but wait, a secret memory awaits below 💌",
+};
+
