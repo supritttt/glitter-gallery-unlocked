@@ -32,6 +32,7 @@ type Particle = {
 };
 
 const UNLOCK_THRESHOLD = 0.58;
+const CLEAR_CHECK_INTERVAL = 220;
 
 function cssToken(name: string) {
   if (typeof document === "undefined") return "";
@@ -197,7 +198,7 @@ export function ScratchCard({
     const dustCanvas = dustCanvasRef.current;
     if (!canvas || unlocked) return;
     const bounds = canvas.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.max(1, Math.round(bounds.width * ratio));
     canvas.height = Math.max(1, Math.round(bounds.height * ratio));
 
@@ -306,7 +307,7 @@ export function ScratchCard({
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
     let clear = 0;
     let total = 0;
-    const stride = 32;
+    const stride = 64;
     for (let i = 3; i < pixels.length; i += stride) {
       total += 1;
       if ((pixels[i] ?? 255) < 40) clear += 1;
@@ -360,7 +361,7 @@ export function ScratchCard({
     lastPointRef.current = nextPoint;
 
     const now = performance.now();
-    if (now - checkedAtRef.current > 130) {
+    if (now - checkedAtRef.current > CLEAR_CHECK_INTERVAL) {
       checkedAtRef.current = now;
       if (calculateCleared(context, canvas) >= UNLOCK_THRESHOLD) {
         drawingRef.current = false;
