@@ -200,19 +200,42 @@ export function ScratchCard({
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return;
 
-    const silverDark = cssToken("--scratch-shadow") || "#8a8d94";
-    const silver = cssToken("--scratch-silver") || "#bcc0c7";
-    const silverLight = cssToken("--scratch-highlight") || "#e8ebef";
-    const glitter = cssToken("--scratch-glitter") || "rgba(255,255,255,0.6)";
-    const ink = cssToken("--scratch-ink") || "rgba(40,40,45,0.85)";
+    const silverDark = cssToken("--scratch-shadow") || "#7c8187";
+    const silver = cssToken("--scratch-silver") || "#dfe3e8";
+    const silverLight = cssToken("--scratch-highlight") || "#f7f9fb";
+    const silverMid = "#bcc4cc";
+    const goldDark = "#855d1d";
+    const goldMetal = "#f2c866";
+    const glitter = cssToken("--scratch-glitter") || "rgba(255,255,255,0.7)";
+    const ink = cssToken("--scratch-ink") || "rgba(40,40,45,0.82)";
 
     const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, silverDark);
-    gradient.addColorStop(0.28, silverLight);
-    gradient.addColorStop(0.55, silver);
-    gradient.addColorStop(0.82, silverLight);
-    gradient.addColorStop(1, silverDark);
+    if (bonus) {
+      gradient.addColorStop(0, goldDark);
+      gradient.addColorStop(0.18, "#b77b1a");
+      gradient.addColorStop(0.38, goldMetal);
+      gradient.addColorStop(0.6, "#f9df8a");
+      gradient.addColorStop(0.82, goldMetal);
+      gradient.addColorStop(1, goldDark);
+    } else {
+      gradient.addColorStop(0, "#6f737a");
+      gradient.addColorStop(0.14, "#a8afb8");
+      gradient.addColorStop(0.32, silverLight);
+      gradient.addColorStop(0.5, silver);
+      gradient.addColorStop(0.68, silverMid);
+      gradient.addColorStop(0.85, silverLight);
+      gradient.addColorStop(1, "#70757d");
+    }
     context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const sheen = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    sheen.addColorStop(0, "rgba(255,255,255,0.26)");
+    sheen.addColorStop(0.22, "rgba(255,255,255,0)");
+    sheen.addColorStop(0.5, "rgba(255,255,255,0.1)");
+    sheen.addColorStop(0.75, "rgba(255,255,255,0.18)");
+    sheen.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = sheen;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     let seed = (index + 1) * 9_973 + 17;
@@ -221,26 +244,30 @@ export function ScratchCard({
       return seed / 2_147_483_647;
     };
     context.fillStyle = glitter;
-    for (let i = 0; i < 780; i += 1) {
-      const radius = (0.35 + random() * 1.5) * ratio;
+    for (let i = 0; i < 900; i += 1) {
+      const radius = (0.35 + random() * 1.6) * ratio;
       context.beginPath();
       context.arc(random() * canvas.width, random() * canvas.height, radius, 0, Math.PI * 2);
       context.fill();
     }
 
     // Border pattern inside coating
-    context.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    context.strokeStyle = "rgba(255, 255, 255, 0.35)";
     context.lineWidth = 1.5 * ratio;
-    context.strokeRect(10 * ratio, 10 * ratio, canvas.width - 20 * ratio, canvas.height - 20 * ratio);
+    context.strokeRect(12 * ratio, 12 * ratio, canvas.width - 24 * ratio, canvas.height - 24 * ratio);
 
     context.fillStyle = ink;
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.font = `600 ${Math.round(11 * ratio)}px Manrope, sans-serif`;
-    context.fillText(bonus ? "BONUS MEMORY" : "SCRATCH TO REVEAL", canvas.width / 2, canvas.height / 2 - 5 * ratio);
-    context.font = `400 ${Math.round(9 * ratio)}px Manrope, sans-serif`;
+    context.font = `700 ${Math.round(11 * ratio)}px Manrope, sans-serif`;
     context.fillText(
-      bonus ? "A secret for you" : `MEMORY ${String(index + 1).padStart(2, "0")}`,
+      bonus ? "GOLDEN REVEAL" : "SCRATCH TO REVEAL",
+      canvas.width / 2,
+      canvas.height / 2 - 5 * ratio,
+    );
+    context.font = `500 ${Math.round(9 * ratio)}px Manrope, sans-serif`;
+    context.fillText(
+      bonus ? "FINAL SURPRISE • 13" : `MEMORY ${String(index + 1).padStart(2, "0")}`,
       canvas.width / 2,
       canvas.height / 2 + 14 * ratio,
     );
@@ -384,7 +411,9 @@ export function ScratchCard({
         className={`relative aspect-[4/5] overflow-hidden rounded-card border bg-card shadow-gallery transition-all duration-500 ${
           unlocked
             ? "cursor-pointer border-gallery-line hover:border-primary/50 hover:shadow-xl"
-            : "border-gallery-line"
+            : bonus
+              ? "border-amber-300/90 bg-gradient-to-br from-amber-400/15 via-card to-yellow-200/15 shadow-[0_0_0_1px_rgba(250,204,21,0.45),0_0_28px_rgba(251,191,36,0.28),0_24px_64px_rgba(245,158,11,0.2)]"
+              : "border-gallery-line"
         } ${justUnlocked ? "glow-unlocked border-primary ring-2 ring-primary/40" : ""}`}
       >
         <img
@@ -466,8 +495,22 @@ export function ScratchCard({
 
         {/* Top-right sparkle icon on scratch coating */}
         {!unlocked && !isFading && !isPeeking && (
-          <div className="pointer-events-none absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border border-gallery-foil-line bg-gallery-foil/70 text-gallery-ink backdrop-blur-sm">
+          <div
+            className={`pointer-events-none absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border backdrop-blur-sm ${
+              bonus
+                ? "border-amber-200/80 bg-gradient-to-br from-yellow-200/80 to-amber-500/80 text-amber-950 shadow-[0_0_16px_rgba(250,204,21,0.5)]"
+                : "border-gallery-foil-line bg-gallery-foil/70 text-gallery-ink"
+            }`}
+          >
             <Sparkles className="size-3.5" aria-hidden="true" />
+          </div>
+        )}
+
+        {bonus && !unlocked && !isFading && (
+          <div className="pointer-events-none absolute inset-x-4 top-4 flex justify-center">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/80 bg-gradient-to-r from-yellow-200/90 via-amber-200/90 to-yellow-100/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-[0.22em] text-amber-950 shadow-[0_0_16px_rgba(250,204,21,0.4)]">
+              Final surprise
+            </span>
           </div>
         )}
       </article>
