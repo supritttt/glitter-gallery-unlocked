@@ -14,6 +14,7 @@ import photo08 from "@/assets/SaveClip.App_793867456_18105278330581606_920480787
 import photo09 from "@/assets/SaveClip.App_795252474_18105278246581606_6601809545290298397_n.jpg.asset.json";
 import photo10 from "@/assets/SaveClip.App_802298427_18105936572581606_22816562041446178_n.jpg.asset.json";
 import { ScratchCard } from "@/components/scratch-card";
+import { BackgroundMusic } from "@/components/background-music";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -85,6 +86,7 @@ function Index() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-36 text-foreground">
+      <BackgroundMusic />
       <div className="ambient-field" aria-hidden="true">
         {Array.from({ length: 18 }, (_, index) => (
           <span key={index} />
