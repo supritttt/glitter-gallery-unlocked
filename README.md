@@ -18,11 +18,11 @@ Build a highly interactive "Scratch-Off Gallery" web page using React and Tailwi
 
 8. Make sure the scratch action works flawlessly on mobile touch events without breaking page scrolling. Use placeholder image URLs that I can easily replace.
 
-This project was built with [Lovable](https://lovable.dev).
 
-## Build with Lovable
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/d8a92279-d93c-4dfb-b2b1-e7ff96ff9947).
+## Build with Love
+
+
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
 - **Stay in sync**: every change made in Lovable is committed straight to this repository.
