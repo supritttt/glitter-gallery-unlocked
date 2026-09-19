@@ -10,7 +10,10 @@ export function BackgroundMusic() {
   useEffect(() => {
     const audio = new Audio(track.url);
     audio.loop = true;
-    audio.volume = 0.35;
+    audio.volume = 0.22;
+    // Slowed-down, soft background feel (slowed + reverb style).
+    audio.playbackRate = 0.82;
+    if ("preservesPitch" in audio) audio.preservesPitch = false;
     audioRef.current = audio;
 
     const tryPlay = () => {
