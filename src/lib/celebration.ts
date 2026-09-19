@@ -175,11 +175,32 @@ export async function downloadKeepsake(images: string[], title: string) {
   context.fillText("SOME MOMENTS ARE WORTH KEEPING", canvas.width / 2, canvas.height - 52);
 
   try {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not create keepsake image");
+
+    const filename = "our-love-story.png";
+    const file = new File([blob], filename, { type: "image/png" });
+    const canShareFile =
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [file] });
+
+    if (canShareFile) {
+      await navigator.share({
+        files: [file],
+        title: title,
+        text: "Our love story",
+      });
+      return;
+    }
+
     const link = document.createElement("a");
-    link.download = "our-treasured-memories.png";
-    link.href = canvas.toDataURL("image/png");
+    link.download = filename;
+    link.href = URL.createObjectURL(blob);
     link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   } catch (err) {
-    console.error("Failed to generate keepsake data URL", err);
+    if (err instanceof DOMException && err.name === "AbortError") return;
+    console.error("Failed to share keepsake image", err);
   }
 }
