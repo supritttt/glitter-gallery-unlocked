@@ -274,9 +274,17 @@ function Index() {
           onClick={() => setShowSecret(false)}
         >
           <div
-            className="relative w-full max-w-sm rounded-card border border-primary/40 bg-card px-7 py-8 text-center shadow-2xl"
+            className="relative w-full max-w-sm overflow-hidden rounded-card border border-[#f4c96b]/90 bg-[linear-gradient(135deg,#3b2a12_0%,#10151d_18%,#0b1017_78%,#5a3b16_100%)] px-7 py-8 text-center shadow-[0_0_0_1px_rgba(255,224,145,0.22),0_0_42px_rgba(224,158,54,0.28),0_24px_80px_rgba(0,0,0,0.55)]"
             onClick={(event) => event.stopPropagation()}
           >
+            <div
+              className="pointer-events-none absolute inset-1 rounded-[calc(var(--radius-card)-0.25rem)] border border-[#ffe5a3]/25"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute -left-16 -top-20 size-48 rounded-full bg-[#ffd978]/10 blur-3xl"
+              aria-hidden="true"
+            />
             <button
               type="button"
               onClick={() => setShowSecret(false)}
@@ -285,7 +293,7 @@ function Index() {
             >
               <X className="size-4" aria-hidden="true" />
             </button>
-            <Sparkles className="mx-auto size-7 text-primary" aria-hidden="true" />
+            <Sparkles className="relative mx-auto size-7 text-[#ffd978] drop-shadow-[0_0_9px_rgba(255,205,96,0.7)]" aria-hidden="true" />
             <h2 id="secret-note-title" className="mt-4 font-display text-3xl text-gallery-paper">
               You found the little secret.
             </h2>
