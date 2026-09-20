@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Gift, Sparkles } from "lucide-react";
+import { Gift, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BackgroundMusic } from "@/components/background-music";
@@ -96,6 +96,8 @@ function Index() {
 
   const [unlocked, setUnlocked] = useState<Set<number>>(() => new Set());
   const [bonusUnlocked, setBonusUnlocked] = useState(false);
+  const [secretTapCount, setSecretTapCount] = useState(0);
+  const [showSecret, setShowSecret] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState<
     (Memory & { position: number | string }) | null
   >(null);
@@ -175,8 +177,18 @@ function Index() {
   const handleReplay = () => {
     setUnlocked(new Set());
     setBonusUnlocked(false);
+    setSecretTapCount(0);
+    setShowSecret(false);
     setSelectedMemory(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSecretTap = () => {
+    setSecretTapCount((current) => {
+      const next = current + 1;
+      if (next >= 3) setShowSecret(true);
+      return next;
+    });
   };
 
   // Handle keepsake download
@@ -231,6 +243,41 @@ function Index() {
         onClose={() => setSelectedMemory(null)}
       />
 
+      {showSecret && (
+        <div
+          className="fixed inset-0 z-[75] flex items-center justify-center bg-background/80 p-5 backdrop-blur-lg animate-note-fade"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="secret-note-title"
+          onClick={() => setShowSecret(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-card border border-primary/40 bg-card px-7 py-8 text-center shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowSecret(false)}
+              aria-label="Close secret note"
+              className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+            <Sparkles className="mx-auto size-7 text-primary" aria-hidden="true" />
+            <h2 id="secret-note-title" className="mt-4 font-display text-3xl text-gallery-paper">
+              You found the little secret.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              {recipientName}, I would choose you in every lifetime. This tiny corner of the
+              gallery is just for us.
+            </p>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              With love, {creatorName}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Ambient background soundtrack & particles */}
       <BackgroundMusic />
       <div className="ambient-field" aria-hidden="true">
@@ -252,10 +299,17 @@ function Index() {
           />
 
           <div className="relative z-10 flex items-center justify-center gap-2">
-            <Sparkles
-              className={`size-3.5 ${bonusUnlocked ? "text-amber-300" : "text-primary"}`}
-              aria-hidden="true"
-            />
+            <button
+              type="button"
+              onClick={handleSecretTap}
+              aria-label="A tiny secret"
+              className="inline-flex size-5 items-center justify-center rounded-full transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Sparkles
+                className={`size-3.5 ${bonusUnlocked ? "text-amber-300" : "text-primary"}`}
+                aria-hidden="true"
+              />
+            </button>
             <span
               className={`text-xs font-semibold tracking-wider uppercase ${
                 bonusUnlocked ? "text-amber-100" : "text-gallery-paper"
