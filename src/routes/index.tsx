@@ -70,6 +70,13 @@ const VISIT_LINES = [
 
 const VISIT_LINES_STORAGE_KEY = "gallery_visit_lines_seen";
 
+const SECRET_MESSAGES = [
+  "I would choose you in every lifetime. This tiny corner of the gallery is just for us.",
+  "You are my favorite part of every ordinary day, even the ones we forget to photograph.",
+  "Here is the secret I keep finding everywhere: life feels more like home whenever you are near.",
+  "One day, we will look back at these memories and smile at how much more beautiful life became.",
+];
+
 function Index() {
   const [showIntro, setShowIntro] = useState<boolean>(true);
   const [visitLine, setVisitLine] = useState(VISIT_LINES[0]);
@@ -97,6 +104,8 @@ function Index() {
   const [unlocked, setUnlocked] = useState<Set<number>>(() => new Set());
   const [bonusUnlocked, setBonusUnlocked] = useState(false);
   const [secretTapCount, setSecretTapCount] = useState(0);
+  const [secretMessageIndex, setSecretMessageIndex] = useState(0);
+  const [usedSecretMessageIndexes, setUsedSecretMessageIndexes] = useState<number[]>([]);
   const [showSecret, setShowSecret] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState<
     (Memory & { position: number | string }) | null
@@ -178,17 +187,30 @@ function Index() {
     setUnlocked(new Set());
     setBonusUnlocked(false);
     setSecretTapCount(0);
+    setSecretMessageIndex(0);
+    setUsedSecretMessageIndexes([]);
     setShowSecret(false);
     setSelectedMemory(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSecretTap = () => {
-    setSecretTapCount((current) => {
-      const next = current + 1;
-      if (next >= 3) setShowSecret(true);
-      return next;
-    });
+    const next = secretTapCount + 1;
+    if (next < 3) {
+      setSecretTapCount(next);
+      return;
+    }
+    const nextMessageIndex = SECRET_MESSAGES.findIndex(
+      (_, index) => !usedSecretMessageIndexes.includes(index),
+    );
+    if (nextMessageIndex === -1) {
+      setSecretTapCount(0);
+      return;
+    }
+    setSecretMessageIndex(nextMessageIndex);
+    setUsedSecretMessageIndexes((current) => [...current, nextMessageIndex]);
+    setSecretTapCount(0);
+    setShowSecret(true);
   };
 
   // Handle keepsake download
@@ -268,8 +290,7 @@ function Index() {
               You found the little secret.
             </h2>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              {recipientName}, I would choose you in every lifetime. This tiny corner of the
-              gallery is just for us.
+              {recipientName}, {SECRET_MESSAGES[secretMessageIndex]}
             </p>
             <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               With love, {creatorName}
