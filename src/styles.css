@@ -259,6 +259,18 @@
   object-fit: cover;
   border-radius: 0.75rem;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  animation: photo-float 8s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.collage-drift img:nth-child(2n) {
+  animation-delay: -2.5s;
+  animation-duration: 10s;
+}
+
+.collage-drift img:nth-child(3n) {
+  animation-delay: -5s;
+  animation-duration: 12s;
 }
 
 .finale-letter {
@@ -293,6 +305,17 @@
 @keyframes drift {
   0% { transform: rotate(-2deg) translateY(0) scale(1.02); }
   100% { transform: rotate(1.5deg) translateY(-30px) scale(1.06); }
+}
+
+@keyframes photo-float {
+  0% { transform: translate3d(-5px, 8px, 0) rotate(-1deg) scale(1.01); }
+  100% { transform: translate3d(6px, -12px, 0) rotate(1.5deg) scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collage-drift img {
+    animation: none;
+  }
 }
 
 .ambient-field {
